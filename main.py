@@ -32,32 +32,52 @@ class OfficeCrusher:
         self.screen.fill("white")
         label = pygame.font.Font("BlackOpsOne-Regular_RUS_by_alince.otf", 30)
         self.button_start = label.render("Начать игру", False, (0, 255, 0), (255, 255, 255))
+        if self.button_start.get_rect(topleft=(300, 250)).collidepoint(pygame.mouse.get_pos()) and self.flag_main_menu:
+            self.button_start = label.render("Начать игру", False, (0, 255, 0), (200, 255, 200))
         self.screen.blit(self.button_start, (300, 250))
+        self.button_end = label.render("Выйти", False, (255, 25, 0), (255, 255, 255))
+        if self.button_end.get_rect(topleft=(350, 400)).collidepoint(pygame.mouse.get_pos()) and self.flag_main_menu:
+            self.button_end = label.render("Выйти", False, (255, 25, 0), (255, 200, 200))
+        self.screen.blit(self.button_end, (350, 400))
         pygame.display.flip()
 
     def handle_events(self):
+        keys = pygame.key.get_pressed()
+        label = pygame.font.Font("BlackOpsOne-Regular_RUS_by_alince.otf", 30)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            if self.button_start.get_rect(topleft=(300, 250)).collidepoint(pygame.mouse.get_pos()) and pygame.mouse.get_pressed()[0]:
+            if self.button_start.get_rect(topleft=(300, 250)).collidepoint(
+                    pygame.mouse.get_pos()) and self.flag_main_menu and pygame.mouse.get_pressed()[0]:
                 self.flag_game = True
                 self.flag_main_menu = False
 
+            elif (self.button_start.get_rect(topleft=(350, 400)).collidepoint(pygame.mouse.get_pos()) and self.flag_main_menu
+                  and pygame.mouse.get_pressed()[0]):
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                self.flag_game = False
+                self.flag_main_menu = True
+
         if self.flag_game:
-            keys = pygame.key.get_pressed()
+            if keys[pygame.K_LCTRL]:
+                self.player.speed_x = self.player.speed_y = 5
+            else:
+                self.player.speed_x = self.player.speed_y = 3
             if keys[pygame.K_LEFT]:
                 if self.player.position[0] >= 0:
-                    self.player.position[0] -= 3
+                    self.player.position[0] -= self.player.speed_x
             if keys[pygame.K_RIGHT]:
                 if self.player.position[0] <= 700:
-                    self.player.position[0] += 3
+                    self.player.position[0] += self.player.speed_x
             if keys[pygame.K_UP]:
                 if self.player.position[1] >= 0:
-                    self.player.position[1] -= 3
+                    self.player.position[1] -= self.player.speed_y
             if keys[pygame.K_DOWN]:
                 if self.player.position[1] <= 425:
-                    self.player.position[1] += 3
+                    self.player.position[1] += self.player.speed_y
 
     def update(self):
         self.board.update()  # Обновление состояния объекта Board
@@ -68,8 +88,6 @@ class OfficeCrusher:
         self.screen.fill((255, 255, 255))  # Очистка экрана
         # self.board.render(self.screen)  # Отрисовка уровня через метод Board
         # Обновление экрана
-
-
 
 
 class Board:
@@ -94,6 +112,8 @@ class Board:
 class Player:
     def __init__(self):
         self.position = [100, 100]  # Начальная позиция игрока
+        self.speed_x = 3
+        self.speed_y = 3
 
     def update(self, screen):
         screen.blit(pygame.image.load("men.png"), self.position)

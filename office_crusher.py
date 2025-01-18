@@ -46,7 +46,7 @@ class OfficeCrusher:
         self.button_start_rect = self.button_start_texture.get_rect(topleft=(20, 250))
         self.screen.blit(self.button_start_texture, self.button_start_rect.topleft)
 
-        self.button_option_rect = self.button_option_texture.get_rect(topleft=(20, 400))
+        self.button_option_rect = self.button_option_texture.get_rect(topleft=(20, 402))
         self.screen.blit(self.button_option_texture, self.button_option_rect.topleft)
 
         self.button_exit_rect = self.button_exit_texture.get_rect(topleft=(20, 700))

@@ -69,15 +69,19 @@ class OfficeCrusher:
             if keys[pygame.K_LEFT]:
                 if self.player.position[0] >= 0:
                     self.player.position[0] -= self.player.speed_x
+                    self.player.sprite_player.rect.x -= self.player.speed_x
             if keys[pygame.K_RIGHT]:
                 if self.player.position[0] <= 700:
                     self.player.position[0] += self.player.speed_x
+                    self.player.sprite_player.rect.x += self.player.speed_x
             if keys[pygame.K_UP]:
                 if self.player.position[1] >= 0:
                     self.player.position[1] -= self.player.speed_y
+                    self.player.sprite_player.rect.y -= self.player.speed_y
             if keys[pygame.K_DOWN]:
                 if self.player.position[1] <= 425:
                     self.player.position[1] += self.player.speed_y
+                    self.player.sprite_player.rect.y += self.player.speed_y
 
     def update(self):
         self.board.update()  # Обновление состояния объекта Board
@@ -114,9 +118,16 @@ class Player:
         self.position = [100, 100]  # Начальная позиция игрока
         self.speed_x = 3
         self.speed_y = 3
+        self.sprite_player_group = pygame.sprite.Group()
+        self.sprite_player = pygame.sprite.Sprite()
+        self.sprite_player.image = pygame.image.load("men.png")
+        self.sprite_player.rect = self.sprite_player.image.get_rect()
+        self.sprite_player_group.add(self.sprite_player)
+        self.sprite_player.rect.x = 100
+        self.sprite_player.rect.y = 100
 
     def update(self, screen):
-        screen.blit(pygame.image.load("men.png"), self.position)
+        self.sprite_player_group.draw(screen)
 
 
 if __name__ == "__main__":

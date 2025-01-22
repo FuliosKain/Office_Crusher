@@ -7,20 +7,24 @@ class OfficeCrusher:
     def __init__(self, player):
         pygame.init()
 
-        self.screen = pygame.display.set_mode((1024, 768))
+        self.screen = pygame.display.set_mode((1480, 1024))
         self.screen.fill("black")
         pygame.display.set_caption('Office Crusher')
         self.clock = pygame.time.Clock()
 
         self.flag_game = False
         self.flag_main_menu = True
+        self.flag_controls_menu = False
         self.board = Board()  # Инициализация класса Board
         self.player = player
 
     def run(self):
         while True:
             if self.flag_main_menu:
+                print('ХОБА')
                 self.main_menu()
+            elif self.flag_controls_menu:
+                self.controls_menu()
             self.handle_events()
             if self.flag_game:
                 self.update()
@@ -54,27 +58,49 @@ class OfficeCrusher:
 
         pygame.display.flip()
 
+    def controls_menu(self):
+        self.screen.fill("black")
+
+        # Открытие изображения на весь экран
+        controls_image = pygame.image.load("controls_image.png").convert_alpha()  # Замените на ваше изображение
+        controls_image = pygame.transform.scale(controls_image, (1480, 1024))
+        self.screen.blit(controls_image, (0, 0))
+
+        # Кнопка выхода назад
+        self.button_back_texture = pygame.image.load("кнопка_назад.png").convert_alpha()
+        self.button_back_rect = self.button_back_texture.get_rect(topleft=(20, 700))
+        self.screen.blit(self.button_back_texture, self.button_back_rect.topleft)
+
+        pygame.display.flip()
+
     def handle_events(self):
         keys = pygame.key.get_pressed()
-        label = pygame.image.load("лого (1).png")
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            if self.button_start_texture.get_rect(topleft=(20, 250)).collidepoint(
-                    pygame.mouse.get_pos()) and self.flag_main_menu and pygame.mouse.get_pressed()[0]:
-                self.flag_game = True
-                self.flag_main_menu = False
-
-            elif (self.button_start_texture.get_rect(topleft=(20, 100)).collidepoint(
-                    pygame.mouse.get_pos()) and self.flag_main_menu
-                  and pygame.mouse.get_pressed()[0]):
-                pygame.quit()
-                sys.exit()
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            if hasattr(self, 'button_start_rect'):
+                if self.button_start_rect.collidepoint(pygame.mouse.get_pos()) and self.flag_main_menu and \
+                        pygame.mouse.get_pressed()[0]:
+                    self.flag_game = True
+                    self.flag_main_menu = False
+                if self.button_option_rect.collidepoint(pygame.mouse.get_pos()) and self.flag_main_menu and \
+                        pygame.mouse.get_pressed()[0]:
+                    self.flag_controls_menu = True
+                    self.flag_main_menu = False
+                if self.button_exit_rect.collidepoint(pygame.mouse.get_pos()) and self.flag_main_menu and \
+                        pygame.mouse.get_pressed()[0]:
+                    pygame.quit()
+                    sys.exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 self.flag_game = False
                 self.flag_main_menu = True
-
+            if hasattr(self, 'button_back_rect'):
+                print(self.button_back_rect)
+                if self.flag_controls_menu and self.button_back_rect.collidepoint(pygame.mouse.get_pos()) and \
+                        pygame.mouse.get_pressed()[0]:
+                    self.flag_controls_menu = False
+                    self.flag_main_menu = True
         if self.flag_game:
             if keys[pygame.K_LCTRL]:
                 self.player.speed_x = self.player.speed_y = 5
@@ -104,7 +130,7 @@ class OfficeCrusher:
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
-        super().__init__()  # Исправлено на super().__init__()
+        super().__init__()
         if tile_type == 'empty':
             self.image = pygame.image.load("тайл пол.png").convert_alpha()
         elif tile_type == "furniture":

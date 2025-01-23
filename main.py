@@ -7,7 +7,7 @@ class OfficeCrusher:
     def __init__(self, player):
         pygame.init()
 
-        self.screen = pygame.display.set_mode((1024, 960))
+        self.screen = pygame.display.set_mode((1024, 700))
         self.screen.fill("black")
         pygame.display.set_caption('Office Crusher')
         self.clock = pygame.time.Clock()
@@ -15,13 +15,12 @@ class OfficeCrusher:
         self.flag_game = False
         self.flag_main_menu = True
         self.flag_controls_menu = False
-        self.board = Board()  # Инициализация класса Board
+        self.board = Board(player)  # Инициализация класса Board
         self.player = player
 
     def run(self):
         while True:
             if self.flag_main_menu:
-                print('ХОБА')
                 self.main_menu()
             elif self.flag_controls_menu:
                 self.controls_menu()
@@ -103,23 +102,34 @@ class OfficeCrusher:
                     self.flag_game = False
                     self.flag_main_menu = True
                 if self.flag_game:
+                    y = self.board.level_data.index([i for i in self.board.level_data if "@" in i][0])
+                    x = [i for i in self.board.level_data if "@" in i][0].index("@")
                     if event.key == pygame.K_LEFT:
                         self.player.sprite_player.image = pygame.transform.rotate(
                             pygame.image.load("персонаж_вниз.png"), 270)
-                        if self.player.sprite_player.rect.x > 25:
+                        if x > 0 and self.board.level_data[y][x - 1] == ".":
+                            self.board.level_data[y][x - 1] = "@"
+                            self.board.level_data[y][x] = "."
                             self.move("x", -5)
                     if event.key == pygame.K_RIGHT:
                         self.player.sprite_player.image = pygame.transform.rotate(
                             pygame.image.load("персонаж_вниз.png"), 90)
-                        if self.player.sprite_player.rect.x < self.screen.get_rect()[2] - 75:
+                        if x < len(self.board.level_data[y]) and self.board.level_data[y][x + 1] == ".":
+                            self.board.level_data[y][x + 1] = "@"
+                            self.board.level_data[y][x] = "."
                             self.move("x", 5)
                     if event.key == pygame.K_UP:
-                        self.player.sprite_player.image = pygame.transform.rotate(pygame.image.load("персонаж_вниз.png"), 180)
-                        if self.player.sprite_player.rect.y > 25:
+                        self.player.sprite_player.image =\
+                            pygame.transform.rotate(pygame.image.load("персонаж_вниз.png"), 180)
+                        if x > 0 and self.board.level_data[y - 1][x] == ".":
+                            self.board.level_data[y - 1][x] = "@"
+                            self.board.level_data[y][x] = "."
                             self.move("y", -5)
                     if event.key == pygame.K_DOWN:
                         self.player.sprite_player.image = pygame.image.load("персонаж_вниз.png")
-                        if self.player.sprite_player.rect.y < self.screen.get_rect()[3] - 75:
+                        if y < len(self.board.level_data) and self.board.level_data[y + 1][x] == ".":
+                            self.board.level_data[y + 1][x] = "@"
+                            self.board.level_data[y][x] = "."
                             self.move("y", 5)
 
     def update(self):
@@ -143,25 +153,27 @@ class OfficeCrusher:
 
 
 class Tile(pygame.sprite.Sprite):
-    def __init__(self, tile_type, pos_x, pos_y):
+    def __init__(self, tile_type, pos_x, pos_y, list_level):
         super().__init__()
+        num_x = 512 - int(max([len(i) for i in list_level]) / 2 * 50)
+        num_y = 350 - len(list_level) / 2 * 50
         if tile_type == 'empty':
             self.image = pygame.image.load("тайл пол.png").convert_alpha()
         elif tile_type == "furniture":
-            self.image = pygame.image.load("тайл пол.png").convert_alpha()
+            self.image = pygame.image.load("мебель_тайл_1.png").convert_alpha()
         self.rect = self.image.get_rect().move(
-            50 * pos_x, 50 * pos_y)
+            50 * pos_x + num_x, 50 * pos_y + num_y)
 
 
 class Player:
     def __init__(self, x_c, y_x):
-        self.position = [x_c, y_x]  # Начальная позиция игрока
         self.sprite_player_group = pygame.sprite.Group()
         self.sprite_player = pygame.sprite.Sprite()
         self.sprite_player.image = pygame.image.load("персонаж_вниз.png")
         self.sprite_player.rect = self.sprite_player.image.get_rect()
         self.sprite_player_group.add(self.sprite_player)
-        self.sprite_player.rect.x = x_c
+        print(x_c, " sd")
+        self.sprite_player.rect.x = x_c  # Начальная позиция игрока
         self.sprite_player.rect.y = y_x
 
     def update(self, screen):
@@ -169,16 +181,17 @@ class Player:
 
 
 class Board:
-    def __init__(self):
+    def __init__(self, player):
         self.tiles = pygame.sprite.Group()  # Группа спрайтов для тайлов
         self.width = 0
         self.height = 0
+        self.player = player
         self.cell_size = 50  # Размер ячейки (50px)
+        self.level_data = [list(i) for i in self.load_level("level.txt")]  # Пример имени файла
         self.load_level_data()  # Загрузка уровня (получите уровень через метод)
 
     def load_level_data(self):
-        level_data = self.load_level("level.txt")  # Пример имени файла
-        self.new_player, self.width, self.height = self.generate_level(level_data)
+        self.width, self.height = self.generate_level(self.level_data)
 
     def load_level(self, filename):
         filename = "data/" + filename
@@ -189,20 +202,20 @@ class Board:
         return list(map(lambda x: x.ljust(max_width, '.'), level_map))
 
     def generate_level(self, level):
-        new_player, x, y = None, 0, 0
+        x, y = 0, 0
         for y in range(len(level)):
             for x in range(len(level[y])):
-                if level[y][x] == '.':
-                    tile = Tile('empty', x, y)
-                    self.tiles.add(tile)  # Добавление тайла в группу
-                elif level[y][x] == '#':
-                    tile = Tile('furniture', x, y)
+                tile = Tile('empty', x, y, level)
+                self.tiles.add(tile)  # Добавление тайла в группу
+                if level[y][x] == '#':
+                    tile = Tile('furniture', x, y, level)
                     self.tiles.add(tile)  # Добавление тайла в группу
                 elif level[y][x] == '@':
-                    tile = Tile('empty', x, y)
-                    self.tiles.add(tile)  # Добавление тайла в группу
-                    new_player = Player(x, y)
-        return new_player, x, y
+                    self.player.sprite_player.rect.x = \
+                        512 - int(max([len(i) for i in level]) / 2 * 50) + x * 50
+                    self.player.sprite_player.rect.y = \
+                        350 - len(level) / 2 * 50 + y * 50
+        return x, y
 
     def render(self, screen):
         self.tiles.draw(screen)  # Отображение всех спрайтов в группе

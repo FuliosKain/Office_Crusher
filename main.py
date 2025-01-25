@@ -19,6 +19,8 @@ class OfficeCrusher:
         self.player = player
         self.player.board = self.board
         self.player.screen = self.screen
+        self.bullets_group = pygame.sprite.Group()
+        self.bullet = None
 
     def run(self):
         while True:
@@ -28,9 +30,11 @@ class OfficeCrusher:
                 self.controls_menu()
             self.handle_events()
             if self.flag_game:
+                if len(self.bullets_group) > 0:
+                    self.bullet.update()
+                    self.bullets_group.draw(self.screen)
                 self.update()
                 self.render()  # Отрисовка экрана
-
             self.clock.tick(60)  # Ограничение до 60 FPS
 
     def main_menu(self):
@@ -99,7 +103,7 @@ class OfficeCrusher:
                         pygame.mouse.get_pressed()[0]:
                     self.flag_controls_menu = False
                     self.flag_main_menu = True
-            if self.flag_game and event.type == pygame.MOUSEBUTTONDOWN:
+            if self.flag_game and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if self.player.mode == 1:
                     y = self.board.level_data.index([i for i in self.board.level_data if "@" in i][0])
                     x = [i for i in self.board.level_data if "@" in i][0].index("@")
@@ -127,8 +131,27 @@ class OfficeCrusher:
                             self.board.level_data[y + 1][x].protect -= 1
                             if self.board.level_data[y + 1][x].protect == 0:
                                 self.board.level_data[y + 1][x] = "."
-
+                elif self.player.mode == 2 and len(self.bullets_group) == 0:
+                    y = self.board.level_data.index([i for i in self.board.level_data if "@" in i][0])
+                    x = [i for i in self.board.level_data if "@" in i][0].index("@")
+                    if self.player.napravlenie == "right":
+                        self.bullet = Bullet(x, y, self.board, "right")
+                    elif self.player.napravlenie == "left":
+                        self.bullet = Bullet(x, y, self.board, "left")
+                    elif self.player.napravlenie == "right":
+                        self.bullet = Bullet(x, y, self.board, "up")
+                    elif self.player.napravlenie == "right":
+                        self.bullet = Bullet(x, y, self.board, "down")
+                    self.bullets_group.add(self.bullet.sprite_bullet)
+                    self.bullets_group.draw(self.screen)
+                    self.player.num_sprite = 2
                 self.board.generate_level()
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+                if self.player.mode == 1:
+                    self.player.mode = 2
+                else:
+                    self.player.mode = 1
+                print(self.player.mode)
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.flag_game = False
@@ -212,7 +235,7 @@ class Player:
                 self.sprite_player.rect.y += self.dictenary_napr[self.napravlenie][2]
             self.screen.fill((255, 255, 255))
             self.board.render(self.screen)
-            self.num = 0
+            self.num_sprite = 0
             self.update()
             pygame.display.flip()
             clock.tick(60)
@@ -271,15 +294,61 @@ class Furniture:
     def __init__(self, number):
         self.num = int(number)
         self.protect = 2
+        self.rect = None
 
     def update(self):
         if self.protect == 2:
             return pygame.image.load(f"мебель_тайл_{self.num}.png")
         return pygame.image.load(f"furniture_tile_breakung_{self.num}.png")
 
-
     def __class__(self):
         return Furniture
+
+
+class Bullet:
+    def __init__(self, x, y, board, napravlenie):
+        print(board)
+        self.sprite_bullet = pygame.sprite.Sprite()
+        self.sprite_bullet.image = pygame.image.load("bullet.png")
+        self.sprite_bullet.rect = self.sprite_bullet.image.get_rect()
+        self.sprite_bullet.rect.x = \
+            512 - int(max([len(i) for i in board.level_data]) / 2 * 50) + x * 50 + 12
+        self.sprite_bullet.rect.y = \
+            int(350 - len(board.level_data) / 2 * 50 + y * 50) + 12
+        self.x = x
+        self.y = y
+        self.napr = napravlenie
+        self.board = board
+        print(self.sprite_bullet.rect)
+
+    def update(self):
+        board = self.board.level_data
+        if self.napr == "right":
+            self.sprite_bullet.rect.x += 10
+            if self.sprite_bullet.rect.x >= 512 - int(max([len(i) for i in board]) / 2 * 50) + board[
+                self.y].index([i for i in board[self.y][self.x:] if type(i) == Furniture][0]) * 50 + 12:
+                board[self.y][
+                    board[self.y].index([i for i in board[self.y][self.x:] if type(i) == Furniture][0])].protect -= 1
+                if board[self.y][
+                    board[self.y].index([i for i in board[self.y][self.x:] if type(i) == Furniture][0])].protect == 0:
+                    board[self.y][
+                        board[self.y].index([i for i in board[self.y][self.x:] if type(i) == Furniture][0])] = "."
+                self.board.generate_level()
+                self.sprite_bullet.kill()
+        elif self.napr == "left":
+            self.sprite_bullet.rect.x -= 10
+            if self.sprite_bullet.rect.x >= 512 - int(max([len(i) for i in board]) / 2 * 50) + board[
+                self.y].index([i for i in board[self.y][:self.x] if type(i) == Furniture][0]) * 50 + 12:
+                board[self.y][
+                    board[self.y].index([i for i in board[self.y][:self.x] if type(i) == Furniture][0])].protect -= 1
+                if board[self.y][
+                    board[self.y].index([i for i in board[self.y][:self.x] if type(i) == Furniture][0])].protect == 0:
+                    board[self.y][
+                        board[self.y].index([i for i in board[self.y][:self.x] if type(i) == Furniture][0])] = "."
+                self.board.generate_level()
+                self.sprite_bullet.kill()
+
+
 
 
 if __name__ == "__main__":

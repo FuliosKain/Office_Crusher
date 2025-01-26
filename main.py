@@ -1,12 +1,14 @@
 import pygame
 import sys
 
+from select import select
+
 
 class OfficeCrusher:
     def __init__(self, player):
         pygame.init()
-
-        self.screen = pygame.display.set_mode((1480, 1024))
+        self.screen_size = (1480, 1024)
+        self.screen = pygame.display.set_mode(self.screen_size)
         self.screen.fill("black")
         pygame.display.set_caption('Office Crusher')
         self.clock = pygame.time.Clock()
@@ -19,12 +21,12 @@ class OfficeCrusher:
         self.mousePos = pygame.mouse.get_pos()
         self.is_clicked = pygame.mouse.get_pressed(num_buttons=3)[0]
 
-        self.label = pygame.font.Font("BlackOpsOne-Regular_RUS_by_alince.otf", 30)
-        self.start_button = Button(self.screen, 362, 270, 300, 100, self.label, 'startButton',
+        self.label = pygame.font.Font("BlackOpsOne-Regular_RUS_by_alince.otf", 45)
+        self.start_button = Button(self.screen, 20, 300, 450, 150, self.label, 'startButton',
                                    'Начать игру', 'black')
-        self.exit_button = Button(self.screen, 362, 390, 300, 100, self.label, 'exitButton',
+        self.exit_button = Button(self.screen, 20, 640, 450, 150, self.label, 'exitButton',
                                   'Выйти из игры', 'black')
-        self.edit_button = Button(self.screen, 362, 510, 300, 100, self.label, 'settings_button',
+        self.edit_button = Button(self.screen, 20, 470, 450, 150, self.label, 'settings_button',
                                   'Настройки', 'black')
         self.buttons = [self.start_button, self.exit_button, self.edit_button]
 
@@ -36,9 +38,10 @@ class OfficeCrusher:
             self.handle_events()
             self.mousePos = pygame.mouse.get_pos()
             self.is_clicked = pygame.mouse.get_pressed(num_buttons=3)[0]
-
+            print(self.flag_game, self.flag_main_menu, self.flag_controls_menu)
             if self.flag_main_menu:
-                self.main_menu()
+                self.screen.fill((0, 0, 0))
+                self.main_menu(self.flag_main_menu)
                 self.screen.blit(self.logo_surface, self.logo_rect)
             elif self.flag_controls_menu:
                 self.controls_menu()
@@ -48,22 +51,24 @@ class OfficeCrusher:
 
             self.clock.tick(60)  # Ограничение до 60 FPS # Ограничение до 60 FPS
 
-    def main_menu(self):
+    def main_menu(self, flag):
         self.logo_surface = pygame.image.load("logo.png").convert_alpha()
-        self.logo_rect = self.logo_surface.get_rect(center=(512, 140))  # Центрирование текста
+        self.logo_rect = self.logo_surface.get_rect(center=(740, 150))  # Центрирование текста
+        self.screen.blit(self.logo_surface, self.logo_rect)
         for button in self.buttons:
             clicked_button = button.update(self.mousePos, self.is_clicked)
             if clicked_button is not None:
-                if clicked_button == 'startButton':
-                    print('start button pressed!')
-                    self.flag_game = True
-                    self.flag_main_menu = False
-                elif clicked_button == 'exitButton':
-                    print('exit button pressed!')
-                    sys.exit()
-                elif clicked_button == 'settings_button':
-                    self.flag_controls_menu = True
-                    self.flag_main_menu = False
+                if flag:
+                    if clicked_button == 'startButton':
+                        print('start button pressed!')
+                        self.flag_game = True
+                        self.flag_main_menu = False
+                    elif clicked_button == 'exitButton':
+                        print('exit button pressed!')
+                        sys.exit()
+                    elif clicked_button == 'settings_button':
+                        self.flag_controls_menu = True
+                        self.flag_main_menu = False
 
         pygame.display.flip()
 
@@ -74,18 +79,6 @@ class OfficeCrusher:
         controls_image = pygame.image.load("controls_image.png").convert_alpha()  # Замените на ваше изображение
         controls_image = pygame.transform.scale(controls_image, (1480, 1024))
         self.screen.blit(controls_image, (0, 0))
-
-        # Кнопка выхода назад
-        self.button_back_texture = pygame.image.load("кнопка_назад.png").convert_alpha()
-        self.button_back_rect = self.button_back_texture.get_rect(topleft=(20, 700))
-        self.screen.blit(self.button_back_texture, self.button_back_rect.topleft)
-
-        pygame.display.flip()
-
-        # Кнопка выхода назад
-        self.button_back_texture = pygame.image.load("кнопка_назад.png").convert_alpha()
-        self.button_back_rect = self.button_back_texture.get_rect(topleft=(20, 700))
-        self.screen.blit(self.button_back_texture, self.button_back_rect.topleft)
 
         pygame.display.flip()
 
@@ -116,13 +109,14 @@ class OfficeCrusher:
                     self.flag_main_menu = True
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    self.flag_game = False
-                    self.flag_main_menu = True
+                    if self.flag_game is True:
+                        self.flag_game = False
+                        self.flag_main_menu = True
+                    if self.flag_controls_menu is True:
+                        self.flag_controls_menu = False
+                        self.flag_main_menu = True
                 if self.flag_game:
-                    if keys[pygame.K_LCTRL]:
-                        self.player.speed_x = self.player.speed_y = 5
-                    else:
-                        self.player.speed_x = self.player.speed_y = 3
+                    self.player.speed_x = self.player.speed_y = 1
                     if keys[pygame.K_LEFT]:
                         if self.player.position[0] >= 0:
                             self.player.position[0] -= self.player.speed_x
@@ -136,28 +130,9 @@ class OfficeCrusher:
                             self.player.position[1] -= self.player.speed_y
                             self.player.sprite_player.rect.y -= self.player.speed_y
                     if keys[pygame.K_DOWN]:
-                        if self.player.position[1] <= 425:
+                        if self.player.position[1] <= 450:
                             self.player.position[1] += self.player.speed_y
                             self.player.sprite_player.rect.y += self.player.speed_y
-                    if hasattr(self, 'button_start_rect'):
-                        if self.button_start_rect.collidepoint(pygame.mouse.get_pos()) and self.flag_main_menu and \
-                                pygame.mouse.get_pressed()[0]:
-                            self.flag_game = True
-                            self.flag_main_menu = False
-                        if self.button_option_rect.collidepoint(pygame.mouse.get_pos()) and self.flag_main_menu and \
-                                pygame.mouse.get_pressed()[0]:
-                            self.flag_controls_menu = True
-                            self.flag_main_menu = False
-                        if self.button_exit_rect.collidepoint(pygame.mouse.get_pos()) and self.flag_main_menu and \
-                                pygame.mouse.get_pressed()[0]:
-                            pygame.quit()
-                            sys.exit()
-                    if hasattr(self, 'button_back_rect'):
-                        print(self.button_back_rect)
-                        if self.flag_controls_menu and self.button_back_rect.collidepoint(pygame.mouse.get_pos()) and \
-                                pygame.mouse.get_pressed()[0]:
-                            self.flag_controls_menu = False
-                            self.flag_main_menu = True
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE:
                             self.flag_game = False
@@ -203,7 +178,7 @@ class Button:
         self.text_image_rect = self.text_image.get_rect()
 
         self.back_colors = {
-            'normal': (0, 255, 0),
+            'normal': (21, 140, 0),
             'hover': (255, 255, 255),
             'clicked': (0, 100, 0)
         }

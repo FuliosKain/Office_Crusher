@@ -1,6 +1,5 @@
 import pygame
 import sys
-import os
 
 
 class OfficeCrusher:
@@ -11,62 +10,62 @@ class OfficeCrusher:
         self.screen.fill("black")
         pygame.display.set_caption('Office Crusher')
         self.clock = pygame.time.Clock()
-        self.main_menu()
         self.flag_game = False
         self.flag_main_menu = True
         self.flag_controls_menu = False
         self.board = Board()  # Инициализация класса Board
         self.player = player
 
+        self.mousePos = pygame.mouse.get_pos()
+        self.is_clicked = pygame.mouse.get_pressed(num_buttons=3)[0]
+
+        self.label = pygame.font.Font("BlackOpsOne-Regular_RUS_by_alince.otf", 30)
+        self.start_button = Button(self.screen, 362, 270, 300, 100, self.label, 'startButton',
+                                   'Начать игру', 'black')
+        self.exit_button = Button(self.screen, 362, 390, 300, 100, self.label, 'exitButton',
+                                  'Выйти из игры', 'black')
+        self.edit_button = Button(self.screen, 362, 510, 300, 100, self.label, 'settings_button',
+                                  'Настройки', 'black')
+        self.buttons = [self.start_button, self.exit_button, self.edit_button]
+
     def move(self, dir, len):
         self.player.move(dir, len)
 
     def run(self):
         while True:
-            for button in self.buttons:
-                clicked_button = button.update(self.mousePos, self.is_clicked)
-                if clicked_button is not None:
-                    if clicked_button == 'startButton':
-                        print('start button pressed!')
-                        self.in_game = True
-                    elif clicked_button == 'exitButton':
-                        print('exit button pressed!')
-                        self.stop_process = True
-            if self.flag_main_menu:
-                print('ХОБА')
-                self.main_menu()
-            elif self.flag_controls_menu:
-                self.controls_menu()
             self.handle_events()
-            if self.flag_game:
-                self.update()
-                self.render()  # Отрисовка экрана
             self.mousePos = pygame.mouse.get_pos()
             self.is_clicked = pygame.mouse.get_pressed(num_buttons=3)[0]
 
-            self.screen.fill('black')
+            if self.flag_main_menu:
+                self.main_menu()
+                self.screen.blit(self.logo_surface, self.logo_rect)
+            elif self.flag_controls_menu:
+                self.controls_menu()
+            elif self.flag_game:
+                self.update()
+                self.render()  # Отрисовка игрового поля только при flag_game = True
 
-            self.screen.blit(self.logo_surface, self.logo_rect)
-            self.clock.tick(60)  # Ограничение до 60 FPS
+            self.clock.tick(60)  # Ограничение до 60 FPS # Ограничение до 60 FPS
 
     def main_menu(self):
-        self.mousePos = pygame.mouse.get_pos()
-        self.is_clicked = pygame.mouse.get_pressed(num_buttons=3)[0]
-
-        self.in_game = False
-        self.stop_process = False
-
-        self.logo_surface = pygame.image.load("лого (1).png").convert_alpha()
+        self.logo_surface = pygame.image.load("logo.png").convert_alpha()
         self.logo_rect = self.logo_surface.get_rect(center=(512, 140))  # Центрирование текста
+        for button in self.buttons:
+            clicked_button = button.update(self.mousePos, self.is_clicked)
+            if clicked_button is not None:
+                if clicked_button == 'startButton':
+                    print('start button pressed!')
+                    self.flag_game = True
+                    self.flag_main_menu = False
+                elif clicked_button == 'exitButton':
+                    print('exit button pressed!')
+                    sys.exit()
+                elif clicked_button == 'settings_button':
+                    self.flag_controls_menu = True
+                    self.flag_main_menu = False
 
-        self.label = pygame.font.Font("BlackOpsOne-Regular_RUS_by_alince.otf", 30)
-        self.start_button = Button(self.screen, 362, 270, 300, 100, self.label, 'startButton',
-                                   'Начать игру', 'green')
-        self.exit_button = Button(self.screen, 362, 390, 300, 100, self.label, 'exitButton',
-                                  'Выйти из игры', 'red')
-        self.edit_button = Button(self.screen, 362, 510, 300, 100, self.label, 'settings_button',
-                                  'Настройки', 'blue')
-        self.buttons = [self.start_button, self.exit_button, self.edit_button]
+        pygame.display.flip()
 
     def controls_menu(self):
         self.screen.fill("black")
@@ -166,21 +165,21 @@ class OfficeCrusher:
                         if self.flag_game:
                             if event.key == pygame.K_LEFT:
                                 self.player.sprite_player.image = pygame.transform.rotate(
-                                    pygame.image.load("персонаж_вниз.png"), 270)
+                                    pygame.image.load("crowbar.png"), 270)
                                 if self.player.sprite_player.rect.x > 25:
                                     self.move("x", -50)
                             if event.key == pygame.K_RIGHT:
                                 self.player.sprite_player.image = pygame.transform.rotate(
-                                    pygame.image.load("персонаж_вниз.png"), 90)
+                                    pygame.image.load("crowbar.png"), 90)
                                 if self.player.sprite_player.rect.x < self.screen.get_rect()[2] - 75:
                                     self.move("x", 50)
                             if event.key == pygame.K_UP:
                                 self.player.sprite_player.image = pygame.transform.rotate(
-                                    pygame.image.load("персонаж_вниз.png"), 180)
+                                    pygame.image.load("crowbar.png"), 180)
                                 if self.player.sprite_player.rect.y > 25:
                                     self.move("y", -50)
                             if event.key == pygame.K_DOWN:
-                                self.player.sprite_player.image = pygame.image.load("персонаж_вниз.png")
+                                self.player.sprite_player.image = pygame.image.load("crowbar.png")
                                 if self.player.sprite_player.rect.y < self.screen.get_rect()[3] - 75:
                                     self.move("y", 50)
 
@@ -189,7 +188,7 @@ class OfficeCrusher:
         pygame.display.flip()
 
     def render(self):
-        self.screen.fill((255, 255, 255))  # Очистка экрана
+        self.screen.fill("black")
         self.board.render(self.screen)
 
 
@@ -204,9 +203,9 @@ class Button:
         self.text_image_rect = self.text_image.get_rect()
 
         self.back_colors = {
-            'normal': (30, 30, 30),
-            'hover': (100, 100, 100),
-            'clicked': (200, 200, 200)
+            'normal': (0, 255, 0),
+            'hover': (255, 255, 255),
+            'clicked': (0, 100, 0)
         }
 
         self.button_surface = pygame.Surface((self.width, self.height))
@@ -242,9 +241,9 @@ class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
         super().__init__()
         if tile_type == 'empty':
-            self.image = pygame.image.load("тайл пол.png").convert_alpha()
+            self.image = pygame.image.load("floor_tile.png").convert_alpha()
         elif tile_type == "furniture":
-            self.image = pygame.image.load("тайл пол.png").convert_alpha()
+            self.image = pygame.image.load("floor_tile.png").convert_alpha()
         self.rect = self.image.get_rect().move(
             50 * pos_x, 50 * pos_y)
 
@@ -315,6 +314,7 @@ class Board:
         return new_player, x, y
 
     def render(self, screen):
+        screen.fill("black")
         self.tiles.draw(screen)  # Отображение всех спрайтов в группе
 
 

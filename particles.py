@@ -3,9 +3,10 @@ import pygame
 from PIL import Image
 
 
+
 class Particles:
-    def __init__(self, screen, path_to_image, n, vector, pos=(0, 0)):
-        """n - количество кусочков с каждой стороны (всего частиц - n * n)
+    def __init__(self, screen, paths_to_images, n, size_range, vector, pos=(0, 0)):
+        """n - количество частиц
         color - кортеж от (0, 0, 0) до (230, 230, 230), (R, G, B)
         size_range - кортеж, последовательность возможных сторон квадратов частиц
         pos - опорная позиция частиц
@@ -13,38 +14,37 @@ class Particles:
 
         self.all_particles = pygame.sprite.Group()
         self.screen = screen
-        self.big_image = Image.open(path_to_image)
-        self.size_of_img = self.width, self.height = self.big_image.size
-        mode = self.big_image.mode
+        self.default_images = tuple(map(lambda a: pygame.image.load(a).convert_alpha(), paths_to_images))
+        self.size_of_img = self.width, self.height = self.default_images[0].get_size()
 
-        for i in range(0, self.width, n):
-            for j in range(0, self.height, n):
-                    temp_data = self.big_image.crop((i, j, i + n, j + n)).tobytes('raw', 'RGBA')
-                    temp_sprite = pygame.sprite.Sprite(self.all_particles)
-                    temp_sprite.image = pygame.image.fromstring(temp_data, (n, n), 'RGBA')
-                    temp_sprite.rect = pygame.Rect(pos[0] - n / 2, pos[1] - n / 2, n, n)
-                    temp_sprite.center = list(temp_sprite.rect.center)
-                    k = 10
-                    r1 = random.random()
-                    r2 = random.random()
-                    temp_sprite.vector = [(r1 - 0.5) * k + vector[0],
-                                          (r2 - 0.5) * k + vector[1]]
-                    temp_sprite.default_vector = temp_sprite.vector.copy()
+        for i in range(n):
+            temp_size = random.randint(*size_range)
+            temp_number_of_image = random.randint(0, len(self.default_images) - 1)
+            temp_rotation = random.randint(0, 359)
+            temp_sprite = pygame.sprite.Sprite(self.all_particles)
+            temp_sprite.image = pygame.transform.rotate(pygame.transform.scale(self.default_images[temp_number_of_image],
+                                                       (temp_size, temp_size)), temp_rotation)
 
-                    temp_sprite.vector_degree_x = temp_sprite.default_vector[0] / 30
-                    temp_sprite.vector_degree_y = temp_sprite.default_vector[1] / 30
-                    temp_sprite.vector_sign_x = temp_sprite.vector_degree_x > 0
-                    temp_sprite.vector_sign_y = temp_sprite.vector_degree_y > 0
+            #  Сверху происходит рандомное маштабирование и выбор картинки частицы из перечня, еще поворот картинки
 
-                    temp_sprite.rotation_speed = random.randint(-70, 70)
+            temp_sprite.rect = temp_sprite.image.get_rect(center=pos)
+
+            k = 10
+            r1 = random.random()
+            r2 = random.random()
+            temp_sprite.vector = [(r1 - 0.5) * k + vector[0],
+                                  (r2 - 0.5) * k + vector[1]]
+            temp_sprite.default_vector = temp_sprite.vector.copy()
+
+            temp_sprite.vector_degree_x = temp_sprite.default_vector[0] / 30
+            temp_sprite.vector_degree_y = temp_sprite.default_vector[1] / 30
+            temp_sprite.vector_sign_x = temp_sprite.vector_degree_x > 0
+            temp_sprite.vector_sign_y = temp_sprite.vector_degree_y > 0
 
     def update(self):
         self.all_particles.draw(self.screen)
 
         for sprite in self.all_particles:
-            sprite.center[0] += sprite.vector[0]
-            sprite.center[1] += sprite.vector[1]
-            print(sprite.vector)
             sprite.rect = sprite.rect.move(*sprite.vector)
             sprite.vector[0] -= sprite.vector_degree_x
             sprite.vector[1] -= sprite.vector_degree_y
@@ -135,8 +135,8 @@ def main():
                                      pos=click_pos))
                 elif event.button == 1:
                     click_pos = event.pos
-                    particles.append(Particles(screen, 'furniture_tile_2.png', 10, (10, 0),
-                                               pos=click_pos))
+                    particles.append(Particles(screen, ('box_particle_1.png', 'box_particle_2.png'),
+                                               15, (4, 10), (7, 0), pos=click_pos))
 
         screen.fill('black')
 

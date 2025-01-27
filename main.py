@@ -1,7 +1,7 @@
 import pygame
+import sqlite3
+import os
 import sys
-
-from select import select
 
 
 class OfficeCrusher:
@@ -15,29 +15,36 @@ class OfficeCrusher:
         self.flag_game = False
         self.flag_main_menu = True
         self.flag_controls_menu = False
+        self.flag_levels = False
         self.board = Board()  # Инициализация класса Board
         self.player = player
+        self.level_dict = dict()
 
         self.mousePos = pygame.mouse.get_pos()
-        self.is_clicked = pygame.mouse.get_pressed(num_buttons=3)[0]
+        self.is_clicked = pygame.mouse.get_pressed(num_buttons=4)[0]
 
-        self.label = pygame.font.Font("BlackOpsOne-Regular_RUS_by_alince.otf", 45)
+        self.label = pygame.font.Font("Inky-Thin-Pixels_0.ttf", 45)
         self.start_button = Button(self.screen, 20, 300, 450, 150, self.label, 'startButton',
                                    'Начать игру', 'black')
         self.exit_button = Button(self.screen, 20, 640, 450, 150, self.label, 'exitButton',
                                   'Выйти из игры', 'black')
         self.edit_button = Button(self.screen, 20, 470, 450, 150, self.label, 'settings_button',
                                   'Настройки', 'black')
-        self.buttons = [self.start_button, self.exit_button, self.edit_button]
+        self.level_select_button = Button(self.screen, 20, 810, 450, 150, self.label, 'level_select',
+                                          'Уровни', 'black')
+        self.buttons = [self.start_button, self.exit_button, self.edit_button, self.level_select_button]
 
     def move(self, dir, len):
         self.player.move(dir, len)
 
     def run(self):
+        directory_path = 'data'
+        database_name = 'levels'
+        self.find_files_in_directory(directory_path, database_name)
         while True:
             self.handle_events()
             self.mousePos = pygame.mouse.get_pos()
-            self.is_clicked = pygame.mouse.get_pressed(num_buttons=3)[0]
+            self.is_clicked = pygame.mouse.get_pressed(num_buttons=4)[0]
             print(self.flag_game, self.flag_main_menu, self.flag_controls_menu)
             if self.flag_main_menu:
                 self.screen.fill((0, 0, 0))
@@ -52,7 +59,7 @@ class OfficeCrusher:
             self.clock.tick(60)  # Ограничение до 60 FPS # Ограничение до 60 FPS
 
     def main_menu(self, flag):
-        self.logo_surface = pygame.image.load("logo.png").convert_alpha()
+        self.logo_surface = pygame.image.load("textures/logo.png").convert_alpha()
         self.logo_rect = self.logo_surface.get_rect(center=(740, 150))  # Центрирование текста
         self.screen.blit(self.logo_surface, self.logo_rect)
         for button in self.buttons:
@@ -69,14 +76,32 @@ class OfficeCrusher:
                     elif clicked_button == 'settings_button':
                         self.flag_controls_menu = True
                         self.flag_main_menu = False
+                    elif clicked_button == 'level_select':
+                        self.flag_main_menu = False
+                        self.flag_levels = True
 
         pygame.display.flip()
+
+    def level_select(self):
+        self.screen.fill("black")
+
+        self.first_level = Button(self.screen, 20, 300, 450, 150, self.label, 'first',
+                                   '', 'black')
+        self.second_level = Button(self.screen, 20, 640, 450, 150, self.label, 'second',
+                                  'Начать игру', 'black')
+        self.third_level = Button(self.screen, 20, 470, 450, 150, self.label, 'third',
+                                  'Начать игру', 'black')
+        self.fourth_level = Button(self.screen, 20, 810, 450, 150, self.label, 'fourth',
+                                  'Начать игру', 'black')
+        self.fifth_level = Button(self.screen, 20, 980, 450, 150, self.label, 'fifth',
+                                  'Начать игру', 'black')
 
     def controls_menu(self):
         self.screen.fill("black")
 
         # Открытие изображения на весь экран
-        controls_image = pygame.image.load("controls_image.png").convert_alpha()  # Замените на ваше изображение
+        controls_image = pygame.image.load(
+            "textures/controls_image.png").convert_alpha()  # Замените на ваше изображение
         controls_image = pygame.transform.scale(controls_image, (1480, 1024))
         self.screen.blit(controls_image, (0, 0))
 
@@ -140,21 +165,21 @@ class OfficeCrusher:
                         if self.flag_game:
                             if event.key == pygame.K_LEFT:
                                 self.player.sprite_player.image = pygame.transform.rotate(
-                                    pygame.image.load("crowbar.png"), 270)
+                                    pygame.image.load("textures/crowbar.png"), 270)
                                 if self.player.sprite_player.rect.x > 25:
                                     self.move("x", -50)
                             if event.key == pygame.K_RIGHT:
                                 self.player.sprite_player.image = pygame.transform.rotate(
-                                    pygame.image.load("crowbar.png"), 90)
+                                    pygame.image.load("textures/crowbar.png"), 90)
                                 if self.player.sprite_player.rect.x < self.screen.get_rect()[2] - 75:
                                     self.move("x", 50)
                             if event.key == pygame.K_UP:
                                 self.player.sprite_player.image = pygame.transform.rotate(
-                                    pygame.image.load("crowbar.png"), 180)
+                                    pygame.image.load("textures/crowbar.png"), 180)
                                 if self.player.sprite_player.rect.y > 25:
                                     self.move("y", -50)
                             if event.key == pygame.K_DOWN:
-                                self.player.sprite_player.image = pygame.image.load("crowbar.png")
+                                self.player.sprite_player.image = pygame.image.load("textures/crowbar.png")
                                 if self.player.sprite_player.rect.y < self.screen.get_rect()[3] - 75:
                                     self.move("y", 50)
 
@@ -165,6 +190,31 @@ class OfficeCrusher:
     def render(self):
         self.screen.fill("black")
         self.board.render(self.screen)
+
+    def update_db(self, db_name, file_info, id):
+        conn = sqlite3.connect(db_name)
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO levels (name, path, id) VALUES (?, ?, ?)
+        ''', (file_info['name'], file_info['path'], id))
+        conn.commit()
+        conn.close()
+
+    def find_files_in_directory(self, directory, db_name):
+        counter = 0
+        for filename in os.listdir(directory):
+            file_path = os.path.join(directory, filename)
+            if os.path.isfile(file_path):
+                file_info = {
+                    'name': filename,
+                    'path': file_path
+                }
+                print(db_name, file_info)
+                self.update_db(db_name, file_info, counter)
+                self.level_dict[file_info['name']] = file_info['path']
+                counter += 1
+                if counter >= 6:
+                    break
 
 
 class Button:
@@ -216,9 +266,9 @@ class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
         super().__init__()
         if tile_type == 'empty':
-            self.image = pygame.image.load("floor_tile.png").convert_alpha()
+            self.image = pygame.image.load("textures/floor_tile.png").convert_alpha()
         elif tile_type == "furniture":
-            self.image = pygame.image.load("floor_tile.png").convert_alpha()
+            self.image = pygame.image.load("textures/floor_tile.png").convert_alpha()
         self.rect = self.image.get_rect().move(
             50 * pos_x, 50 * pos_y)
 
@@ -233,7 +283,7 @@ class Player:
         self.position = [x_c, y_x]  # Начальная позиция игрока
         self.sprite_player_group = pygame.sprite.Group()
         self.sprite_player = pygame.sprite.Sprite()
-        self.sprite_player.image = pygame.image.load("crowbar.png")
+        self.sprite_player.image = pygame.image.load("textures/crowbar.png")
         self.sprite_player.rect = self.sprite_player.image.get_rect()
         self.sprite_player_group.add(self.sprite_player)
         self.sprite_player.rect.x = x_c
@@ -259,7 +309,7 @@ class Board:
         self.load_level_data()  # Загрузка уровня (получите уровень через метод)
 
     def load_level_data(self):
-        self.level_data = self.load_level("level.txt")  # Пример имени файла
+        self.level_data = self.load_level("mario.txt")  # Пример имени файла
         print(self.level_data)
         self.new_player, self.width, self.height = self.generate_level(self.level_data)
 

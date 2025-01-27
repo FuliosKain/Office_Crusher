@@ -1,220 +1,22 @@
 import pygame
 import sys
+import os
 
 
 class OfficeCrusher:
-    def __init__(self):
+    def __init__(self, player):
         pygame.init()
 
-        self.size = self.weight, self.height = 1024, 700 # задаем размеры
-        self.screen = pygame.display.set_mode(self.size)
+        self.screen = pygame.display.set_mode((1480, 1024))
+        self.screen.fill("black")
         pygame.display.set_caption('Office Crusher')
-
         self.clock = pygame.time.Clock()
-        self.mouse_pos = pygame.mouse.get_pos()
-
         self.flag_game = False
         self.flag_main_menu = True
         self.flag_controls_menu = False
-
-        self.in_process = True
-
         self.board = Board()  # Инициализация класса Board
-        self.menu = MainMenu(self.screen)
-        self.player = Player(*self.board.get_player_pos(), 5, 50)
+        self.player = player
 
-    def run(self):
-        while self.in_process:
-            if self.flag_main_menu:
-                self.menu.update()
-            if self.flag_controls_menu:
-                pass
-            if self.flag_game:
-                self.update() # обновление экрана помешено в одну функцию (это можно обсудить)
-            self.handle_events()
-
-            self.clock.tick(60)  # Ограничение до 60 FPS
-
-    def handle_events(self):
-        self.mouse_pos = pygame.mouse.get_pos()
-        keys = pygame.key.get_pressed()
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.in_process = False
-                sys.exit()
-
-        if self.menu.get_in_game() and not self.flag_game:
-            self.flag_game = True
-            self.flag_main_menu = False
-
-        if self.menu.get_stop_process():
-            self.in_process = False
-            sys.exit()
-
-        if keys[pygame.K_ESCAPE] and self.flag_game: #  переход из состояния игры в состояние меню
-            self.flag_game = False
-            self.flag_main_menu = True
-            self.menu.change_in_game(False)
-        if self.flag_game and not self.player.get_moving():
-            x, y = self.board.get_player_board_pos()
-            if keys[pygame.K_LEFT]:
-                self.player.rotate(270)
-                can_move = self.board.move_player(x - 1, y)
-                if can_move:
-                    self.player.do_move("x", -1)
-            elif keys[pygame.K_RIGHT]:
-                self.player.rotate(90)
-                can_move = self.board.move_player(x + 1, y)
-                if can_move:
-                    self.player.do_move("x", 1)
-            elif keys[pygame.K_UP]:
-                self.player.rotate(180)
-                can_move = self.board.move_player(x, y - 1)
-                if can_move:
-                    self.player.do_move("y", -1)
-            elif keys[pygame.K_DOWN]:
-                self.player.rotate(0)
-                can_move = self.board.move_player(x, y + 1)
-                if can_move:
-                    self.player.do_move("y", 1)
-
-        self.player.moving()
-
-        '''for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            
-            print(self.button_back_rect)
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    self.flag_game = False
-                    self.flag_main_menu = True
-                if self.flag_game:
-                    y = self.board.level_data.index([i for i in self.board.level_data if "@" in i][0])
-                    x = [i for i in self.board.level_data if "@" in i][0].index("@")
-                    if event.key == pygame.K_LEFT:
-                        self.player.sprite_player.image = pygame.transform.rotate(
-                            pygame.image.load("персонаж_вниз.png"), 270)
-                        if x > 0 and self.board.level_data[y][x - 1] == ".":
-                            self.board.level_data[y][x - 1] = "@"
-                            self.board.level_data[y][x] = "."
-                            self.move("x", -5)
-                    if event.key == pygame.K_RIGHT:
-                        self.player.sprite_player.image = pygame.transform.rotate(
-                            pygame.image.load("персонаж_вниз.png"), 90)
-                        if x < len(self.board.level_data[y]) and self.board.level_data[y][x + 1] == ".":
-                            self.board.level_data[y][x + 1] = "@"
-                            self.board.level_data[y][x] = "."
-                            self.move("x", 5)
-                    if event.key == pygame.K_UP:
-                        self.player.sprite_player.image = \
-                            pygame.transform.rotate(pygame.image.load("персонаж_вниз.png"), 180)
-                        if x > 0 and self.board.level_data[y - 1][x] == ".":
-                            self.board.level_data[y - 1][x] = "@"
-                            self.board.level_data[y][x] = "."
-                            self.move("y", -5)
-                    if event.key == pygame.K_DOWN:
-                        self.player.sprite_player.image = pygame.image.load("персонаж_вниз.png")
-                        if y < len(self.board.leevl_data) and self.board.level_data[y + 1][x] == ".":
-                            self.board.level_data[y + 1][x] = "@"
-                            self.board.level_data[y][x] = "."
-                            self.move("y", 5)'''
-
-    def update(self):
-        self.screen.fill((255, 255, 255))  # Очистка экрана
-
-        self.board.render(self.screen)
-        self.player.update(self.screen)
-
-        pygame.display.flip()
-
-
-def load_level(filename):
-    filename = "data/" + filename
-    with open(filename, 'r') as mapFile:
-        level_map = [line.strip() for line in mapFile]
-
-    print(level_map)
-
-    max_width = max(map(len, level_map))
-    return list(map(lambda x: x.ljust(max_width, '.'), level_map))
-
-
-class Board:
-    def __init__(self):
-        self.tiles = pygame.sprite.Group()  # Группа спрайтов для тайлов
-        self.width = 0
-        self.height = 0
-        self.player_x, self.player_y = 0, 0
-        self.player_board_x, self.player_board_y = 0, 0
-        self.cell_size = 50  # Размер ячейки (50px)
-        self.level_data = [list(i) for i in load_level("level.txt")]  # Пример имени файла
-        self.load_level_data()  # Загрузка уровня (получите уровень через метод)
-
-    def load_level_data(self):
-        self.width, self.height = self.generate_level(self.level_data)
-
-    def generate_level(self, level):
-        x, y = 0, 0
-        for y in range(len(level)):
-            for x in range(len(level[y])):
-                tile = Tile('empty', x, y, level)
-                self.tiles.add(tile)  # Добавление тайла в группу
-                if level[y][x] == '#':
-                    tile = Tile('furniture', x, y, level)
-                    self.tiles.add(tile)  # Добавление тайла в группу
-                elif level[y][x] == '@':
-                    self.player_x = \
-                        512 - int(max([len(i) for i in level]) / 2 * 50) + x * 50
-                    self.player_board_x = x
-                    self.player_y = \
-                        int(350 - len(level) / 2 * 50 + y * 50)
-                    self.player_board_y = y
-                    print(self.get_player_board_pos())
-        return x, y
-
-    def render(self, screen):
-        self.tiles.draw(screen)  # Отображение всех спрайтов в группе
-
-    def get_player_pos(self):
-        return self.player_x, self.player_y #  возвращение координат игрока на экране
-
-    def get_player_board_pos(self):
-        return self.player_board_x, self.player_board_y #  возвращение координат игрока на доске
-
-    def move_player(self, to_x, to_y):
-        condition = 0 <= to_x <= self.width and 0 <= to_y <= self.height #  задание условия для передвижения игрока по вектору
-        if condition and self.level_data[to_y][to_x] == '.':
-            self.level_data[self.player_board_y][self.player_board_x] = '.'
-            self.player_board_x = to_x
-            self.player_board_y = to_y
-            self.level_data[to_y][to_x] = '@'
-            print('\n'.join(map(str, self.level_data)))
-            return True
-        return False
-
-
-class Tile(pygame.sprite.Sprite):
-    def __init__(self, tile_type, pos_x, pos_y, list_level):
-        super().__init__()
-        num_x = 512 - int(max([len(i) for i in list_level]) / 2 * 50)
-        num_y = 350 - len(list_level) / 2 * 50
-
-        self.type = tile_type
-
-        if tile_type == 'empty':
-            self.image = pygame.image.load("тайл пол.png").convert_alpha()
-        elif tile_type == "furniture":
-            self.image = pygame.image.load("мебель_тайл_1.png").convert_alpha()
-        self.rect = self.image.get_rect().move(
-            50 * pos_x + num_x, 50 * pos_y + num_y)
-
-
-class MainMenu:
-    def __init__(self, screen):
-        self.screen = screen
         self.mousePos = pygame.mouse.get_pos()
         self.is_clicked = pygame.mouse.get_pressed(num_buttons=3)[0]
 
@@ -228,19 +30,31 @@ class MainMenu:
         self.start_button = Button(self.screen, 362, 270, 300, 100, self.label, 'startButton',
                                    'Начать игру', 'green')
         self.exit_button = Button(self.screen, 362, 390, 300, 100, self.label, 'exitButton',
-                                   'Выйти из игры', 'red')
+                                  'Выйти из игры', 'red')
         self.edit_button = Button(self.screen, 362, 510, 300, 100, self.label, 'settings_button',
                                   'Настройки', 'blue')
         self.buttons = [self.start_button, self.exit_button, self.edit_button]
 
-    def update(self):
-        self.mousePos = pygame.mouse.get_pos()
-        self.is_clicked = pygame.mouse.get_pressed(num_buttons=3)[0]
+    def move(self, dir, len):
+        self.player.move(dir, len)
 
-        self.screen.fill('white')
+    def run(self):
+        while True:
+            if self.flag_main_menu:
+                self.main_menu()
+            elif self.flag_controls_menu:
+                self.controls_menu()
+            self.handle_events()
+            if self.flag_game:
+                self.update()
+                self.render()  # Отрисовка экрана
+            self.mousePos = pygame.mouse.get_pos()
+            self.is_clicked = pygame.mouse.get_pressed(num_buttons=3)[0]
 
-        self.screen.blit(self.logo_surface, self.logo_rect)
+            self.screen.blit(self.logo_surface, self.logo_rect)
+            self.clock.tick(60)  # Ограничение до 60 FPS
 
+    def main_menu(self):
         for button in self.buttons:
             clicked_button = button.update(self.mousePos, self.is_clicked)
             if clicked_button is not None:
@@ -249,73 +63,133 @@ class MainMenu:
                     self.in_game = True
                 elif clicked_button == 'exitButton':
                     print('exit button pressed!')
-                    self.stop_process = True
+                    sys.exit()
 
         pygame.display.flip()
 
-    def get_stop_process(self):
-        return self.stop_process
+    def controls_menu(self):
+        self.screen.fill("black")
 
-    def get_in_game(self):
-        return self.in_game
+        # Открытие изображения на весь экран
+        controls_image = pygame.image.load("controls_image.png").convert_alpha()  # Замените на ваше изображение
+        controls_image = pygame.transform.scale(controls_image, (1480, 1024))
+        self.screen.blit(controls_image, (0, 0))
 
-    def change_in_game(self, value):
-        self.in_game = value
+        # Кнопка выхода назад
+        self.button_back_texture = pygame.image.load("кнопка_назад.png").convert_alpha()
+        self.button_back_rect = self.button_back_texture.get_rect(topleft=(20, 700))
+        self.screen.blit(self.button_back_texture, self.button_back_rect.topleft)
 
+        pygame.display.flip()
 
-class Player(pygame.sprite.Sprite):
-    def __init__(self, x_c, y_x, speed, distance):
-        super().__init__()
+        # Кнопка выхода назад
+        self.button_back_texture = pygame.image.load("кнопка_назад.png").convert_alpha()
+        self.button_back_rect = self.button_back_texture.get_rect(topleft=(20, 700))
+        self.screen.blit(self.button_back_texture, self.button_back_rect.topleft)
 
-        self.sprite_player_group = pygame.sprite.Group()
-        self.sprite_player = pygame.sprite.Sprite()
-        self.sprite_player.image = pygame.image.load("персонаж_вниз.png")
-        self.default_image = self.sprite_player.image.copy()
-        self.sprite_player.rect = self.sprite_player.image.get_rect()
-        self.sprite_player_group.add(self.sprite_player)
-        self.sprite_player.rect.x = x_c  # Начальная позиция игрока
-        self.sprite_player.rect.y = y_x
+        pygame.display.flip()
 
-        self.speed = speed
+    def handle_events(self):
+        keys = pygame.key.get_pressed()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if hasattr(self, 'button_start_rect'):
+                if self.button_start_rect.collidepoint(pygame.mouse.get_pos()) and self.flag_main_menu and \
+                        pygame.mouse.get_pressed()[0]:
+                    self.flag_game = True
+                    self.flag_main_menu = False
+                if self.button_option_rect.collidepoint(pygame.mouse.get_pos()) and self.flag_main_menu and \
+                        pygame.mouse.get_pressed()[0]:
+                    self.flag_controls_menu = True
+                    self.flag_main_menu = False
+                if self.button_exit_rect.collidepoint(pygame.mouse.get_pos()) and self.flag_main_menu and \
+                        pygame.mouse.get_pressed()[0]:
+                    pygame.quit()
+                    sys.exit()
+            if hasattr(self, 'button_back_rect'):
+                print(self.button_back_rect)
+                if self.flag_controls_menu and self.button_back_rect.collidepoint(pygame.mouse.get_pos()) and \
+                        pygame.mouse.get_pressed()[0]:
+                    self.flag_controls_menu = False
+                    self.flag_main_menu = True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.flag_game = False
+                    self.flag_main_menu = True
+                if self.flag_game:
+                    if keys[pygame.K_LCTRL]:
+                        self.player.speed_x = self.player.speed_y = 5
+                    else:
+                        self.player.speed_x = self.player.speed_y = 3
+                    if keys[pygame.K_LEFT]:
+                        if self.player.position[0] >= 0:
+                            self.player.position[0] -= self.player.speed_x
+                            self.player.sprite_player.rect.x -= self.player.speed_x
+                    if keys[pygame.K_RIGHT]:
+                        if self.player.position[0] <= 700:
+                            self.player.position[0] += self.player.speed_x
+                            self.player.sprite_player.rect.x += self.player.speed_x
+                    if keys[pygame.K_UP]:
+                        if self.player.position[1] >= 0:
+                            self.player.position[1] -= self.player.speed_y
+                            self.player.sprite_player.rect.y -= self.player.speed_y
+                    if keys[pygame.K_DOWN]:
+                        if self.player.position[1] <= 425:
+                            self.player.position[1] += self.player.speed_y
+                            self.player.sprite_player.rect.y += self.player.speed_y
+                    if hasattr(self, 'button_start_rect'):
+                        if self.button_start_rect.collidepoint(pygame.mouse.get_pos()) and self.flag_main_menu and \
+                                pygame.mouse.get_pressed()[0]:
+                            self.flag_game = True
+                            self.flag_main_menu = False
+                        if self.button_option_rect.collidepoint(pygame.mouse.get_pos()) and self.flag_main_menu and \
+                                pygame.mouse.get_pressed()[0]:
+                            self.flag_controls_menu = True
+                            self.flag_main_menu = False
+                        if self.button_exit_rect.collidepoint(pygame.mouse.get_pos()) and self.flag_main_menu and \
+                                pygame.mouse.get_pressed()[0]:
+                            pygame.quit()
+                            sys.exit()
+                    if hasattr(self, 'button_back_rect'):
+                        print(self.button_back_rect)
+                        if self.flag_controls_menu and self.button_back_rect.collidepoint(pygame.mouse.get_pos()) and \
+                                pygame.mouse.get_pressed()[0]:
+                            self.flag_controls_menu = False
+                            self.flag_main_menu = True
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            self.flag_game = False
+                            self.flag_main_menu = True
+                        if self.flag_game:
+                            if event.key == pygame.K_LEFT:
+                                self.player.sprite_player.image = pygame.transform.rotate(
+                                    pygame.image.load("персонаж_вниз.png"), 270)
+                                if self.player.sprite_player.rect.x > 25:
+                                    self.move("x", -50)
+                            if event.key == pygame.K_RIGHT:
+                                self.player.sprite_player.image = pygame.transform.rotate(
+                                    pygame.image.load("персонаж_вниз.png"), 90)
+                                if self.player.sprite_player.rect.x < self.screen.get_rect()[2] - 75:
+                                    self.move("x", 50)
+                            if event.key == pygame.K_UP:
+                                self.player.sprite_player.image = pygame.transform.rotate(
+                                    pygame.image.load("персонаж_вниз.png"), 180)
+                                if self.player.sprite_player.rect.y > 25:
+                                    self.move("y", -50)
+                            if event.key == pygame.K_DOWN:
+                                self.player.sprite_player.image = pygame.image.load("персонаж_вниз.png")
+                                if self.player.sprite_player.rect.y < self.screen.get_rect()[3] - 75:
+                                    self.move("y", 50)
 
-        self.rotation = 0
-        self.need_iters = distance // speed
-        self.direction = None
-        self.mode = None
-        self.iters_of_move = 0
+    def update(self):
+        self.player.update(self.screen)
+        pygame.display.flip()
 
-        self.is_moving = False
-
-    def update(self, screen):
-        self.sprite_player_group.draw(screen)
-
-    def do_move(self, mode, direction):
-        """mode - ось движения ("x", "y"), direction - направление движения (1 - вперед, -1 - назад)"""
-
-        if not self.is_moving: #  записываем параметры движения
-            self.mode = mode
-            self.direction = direction
-            self.is_moving = True
-
-    def moving(self):
-        if self.is_moving:
-            if self.mode == "x":
-                self.sprite_player.rect.x += self.speed * self.direction
-            elif self.mode == "y":
-                self.sprite_player.rect.y += self.speed * self.direction
-            self.iters_of_move += 1
-        if self.iters_of_move >= self.need_iters:
-            self.iters_of_move = 0
-            self.is_moving = False
-
-    def rotate(self, angle):
-        if self.rotation != angle:
-            self.rotation = angle
-            self.sprite_player.image = pygame.transform.rotate(
-                self.default_image, self.rotation)
-
-    def get_moving(self):
-        return self.is_moving
+    def render(self):
+        self.screen.fill((255, 255, 255))  # Очистка экрана
+        self.board.render(self.screen)
 
 
 class Button:
@@ -345,9 +219,9 @@ class Button:
 
         if self.button_rect.collidepoint(mouse_pos) and is_clicked:
             self.button_surface.fill(self.back_colors['clicked'])
-            self.is_pressed = True # состояние зажатия кнопки
+            self.is_pressed = True  # состояние зажатия кнопки
         elif self.button_rect.collidepoint(mouse_pos):
-            if self.is_pressed: # если кнопку кликнули (зажали и отпустили)
+            if self.is_pressed:  # если кнопку кликнули (зажали и отпустили)
                 res = True
                 self.is_pressed = False
             else:
@@ -356,13 +230,93 @@ class Button:
             self.is_pressed = False
             self.button_surface.fill(self.back_colors['normal'])
 
-        self.button_surface.blit(self.text_image, self.text_image_rect) # отображение текста на поверхности кнопки
-        self.screen.blit(self.button_surface, self.button_rect) # отображение поверхности кнопки на экране
+        self.button_surface.blit(self.text_image, self.text_image_rect)  # отображение текста на поверхности кнопки
+        self.screen.blit(self.button_surface, self.button_rect)  # отображение поверхности кнопки на экране
 
         if res:
             return self.name
 
 
+class Tile(pygame.sprite.Sprite):
+    def __init__(self, tile_type, pos_x, pos_y):
+        super().__init__()
+        if tile_type == 'empty':
+            self.image = pygame.image.load("тайл пол.png").convert_alpha()
+        elif tile_type == "furniture":
+            self.image = pygame.image.load("тайл пол.png").convert_alpha()
+        self.rect = self.image.get_rect().move(
+            50 * pos_x, 50 * pos_y)
+
+
+class Player:
+    def __init__(self):
+        self.position = [100, 100]  # Начальная позиция игрока
+        self.speed_x = 3
+        self.speed_y = 3
+
+    def __init__(self, x_c, y_x):
+        self.position = [x_c, y_x]  # Начальная позиция игрока
+        self.sprite_player_group = pygame.sprite.Group()
+        self.sprite_player = pygame.sprite.Sprite()
+        self.sprite_player.image = pygame.image.load("crowbar.png")
+        self.sprite_player.rect = self.sprite_player.image.get_rect()
+        self.sprite_player_group.add(self.sprite_player)
+        self.sprite_player.rect.x = x_c
+        self.sprite_player.rect.y = y_x
+
+    def update(self, screen):
+        self.sprite_player_group.draw(screen)
+
+    def move(self, mode, speed):
+        if mode == "x":
+            self.sprite_player.rect.x += speed
+        elif mode == "y":
+            self.sprite_player.rect.y += speed
+        pygame.display.flip()
+
+
+class Board:
+    def __init__(self):
+        self.tiles = pygame.sprite.Group()  # Группа спрайтов для тайлов
+        self.width = 0
+        self.height = 0
+        self.cell_size = 50  # Размер ячейки (50px)
+        self.load_level_data()  # Загрузка уровня (получите уровень через метод)
+
+    def load_level_data(self):
+        self.level_data = self.load_level("level_1.txt")  # Пример имени файла
+        print(self.level_data)
+        self.new_player, self.width, self.height = self.generate_level(self.level_data)
+
+    def load_level(self, filename):
+        filename = "data/" + filename
+        with open(filename, 'r') as mapFile:
+            level_map = [line.strip() for line in mapFile]
+
+        max_width = max(map(len, level_map))
+        level_matrix = [list(row.ljust(max_width, '.')) for row in level_map]  # Преобразование в матрицу
+        return level_matrix
+
+    def generate_level(self, level):
+        new_player, x, y = None, None, None
+        for y in range(len(level)):
+            for x in range(len(level[y])):
+                if level[y][x] == '.':
+                    tile = Tile('empty', x, y)
+                    self.tiles.add(tile)  # Добавление тайла в группу
+                elif level[y][x] == '#':
+                    tile = Tile('furniture', x, y)
+                    self.tiles.add(tile)  # Добавление тайла в группу
+                elif level[y][x] == '@':
+                    tile = Tile('empty', x, y)
+                    self.tiles.add(tile)  # Добавление тайла в группу
+                    new_player = Player(x, y)
+        return new_player, x, y
+
+    def render(self, screen):
+        self.tiles.draw(screen)  # Отображение всех спрайтов в группе
+
+
 if __name__ == "__main__":
-    game = OfficeCrusher()
+    game = OfficeCrusher(Player(0, 0))
     game.run()

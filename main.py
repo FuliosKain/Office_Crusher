@@ -225,9 +225,17 @@ class OfficeCrusher:
     def update_db(self, db_name, file_info, id):
         conn = sqlite3.connect(db_name)
         cursor = conn.cursor()
+
+        # Удаляем все данные из таблицы levels
+        cursor.execute('''
+            DELETE FROM levels
+        ''')
+
+        # Вставляем новые данные
         cursor.execute('''
             INSERT INTO levels (name, path, id) VALUES (?, ?, ?)
         ''', (file_info['name'], file_info['path'], id))
+
         conn.commit()
         conn.close()
 

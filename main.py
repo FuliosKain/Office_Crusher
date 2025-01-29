@@ -111,7 +111,7 @@ class OfficeCrusher:
                         print('first level selected')
                         self.flag_game = True
                         self.flag_main_menu = False
-                    elif clicked_button == 'exitButton':
+                    elif clicked_button == 'second':
                         print('exit button pressed!')
                         sys.exit()
                     elif clicked_button == 'settings_button':

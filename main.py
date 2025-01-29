@@ -36,16 +36,18 @@ class OfficeCrusher:
                                           'Уровни', 'black')
         self.buttons_menu = [self.start_button, self.exit_button, self.edit_button, self.level_select_button]
 
-        self.first_level = Button(self.screen, 20, 300, 450, 150, self.label, 'first',
-                                  '', 'black')
-        self.second_level = Button(self.screen, 20, 640, 450, 150, self.label, 'second',
-                                   'Начать игру', 'black')
-        self.third_level = Button(self.screen, 20, 470, 450, 150, self.label, 'third',
-                                  'Начать игру', 'black')
-        self.fourth_level = Button(self.screen, 20, 810, 450, 150, self.label, 'fourth',
-                                   'Начать игру', 'black')
-        self.fifth_level = Button(self.screen, 20, 980, 450, 150, self.label, 'fifth',
-                                  'Начать игру', 'black')
+        self.first_level = Button(self.screen, 50, 30, 450, 150, self.label, 'first',
+                                  f'1', 'black')
+        self.second_level = Button(self.screen, 50, 230, 450, 150, self.label, 'second',
+                                   f'2 игру', 'black')
+        self.third_level = Button(self.screen, 50, 430, 450, 150, self.label, 'third',
+                                  f'3 игру', 'black')
+        self.fourth_level = Button(self.screen, 50, 630, 450, 150, self.label, 'fourth',
+                                   f'4 игру', 'black')
+        self.fifth_level = Button(self.screen, 50, 830, 450, 150, self.label, 'fifth',
+                                  f'5 игру', 'black')
+
+        self.buttons_levels = [self.first_level, self.second_level, self.third_level, self.fourth_level, self.fifth_level]
 
     def move(self, dir, len):
         self.player.move(dir, len)
@@ -100,16 +102,13 @@ class OfficeCrusher:
     def level_select(self, flag):
         self.screen.fill("black")
         print('ПРОВЕРКА')
-
-
-        for button in self.buttons_menu:
+        for button in self.buttons_levels:
+            button.name = 0
             clicked_button = button.update(self.mousePos, self.is_clicked)
-            print('===============================================================================================')
-            print(clicked_button)
             if clicked_button is not None:
                 if flag:
-                    if clicked_button == 'startButton':
-                        print('start button pressed!')
+                    if clicked_button == 'first':
+                        print('first level selected')
                         self.flag_game = True
                         self.flag_main_menu = False
                     elif clicked_button == 'exitButton':
@@ -121,6 +120,8 @@ class OfficeCrusher:
                     elif clicked_button == 'level_select':
                         self.flag_main_menu = False
                         self.flag_levels = True
+        pygame.display.flip()
+
 
 
     def controls_menu(self):
@@ -166,6 +167,9 @@ class OfficeCrusher:
                         self.flag_main_menu = True
                     if self.flag_controls_menu is True:
                         self.flag_controls_menu = False
+                        self.flag_main_menu = True
+                    if self.flag_levels is True:
+                        self.flag_levels = False
                         self.flag_main_menu = True
                 if self.flag_game:
                     self.player.speed_x = self.player.speed_y = 1

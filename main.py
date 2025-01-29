@@ -1,7 +1,7 @@
 import pygame
 import sys
 
-from select import select
+from select import select  # new
 
 
 class OfficeCrusher:

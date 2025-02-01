@@ -24,6 +24,7 @@ class OfficeCrusher:
         self.flag_main_menu = True
         self.flag_controls_menu = False
         self.flag_levels = False
+        self.flag_stop_menu = False
         self.board = Board(player)  # Инициализация класса Board
         self.player = player
         self.player.board = self.board
@@ -48,6 +49,12 @@ class OfficeCrusher:
         self.level_select_button = Button(self.screen, width * 0.0135, height * 0.791, width * 0.30, height * 0.146,
                                           self.label, 'level_select', 'Уровни', 'black')
         self.buttons_menu = [self.start_button, self.exit_button, self.edit_button, self.level_select_button]
+
+        self.button_stop_continue = Button(self.screen, width * 0.391, height * 0.37, width * 0.219, height * 0.092,
+                                      self.label, "continue", "Продолжить")
+        self.button_stop_exit = Button(self.screen, width * 0.391, height * 0.509, width * 0.219, height * 0.092,
+                                      self.label, "exit", "Выйти")
+        self.buttons_stop_menu = [self.button_stop_exit, self.button_stop_continue]
         try:
             self.first_level = Button(self.screen, width * 0.034, height * 0.03, width * 0.304, height * 0.146,
                                       self.label, 'first', f'"{level_names[0][:-4]}"', 'black')
@@ -82,6 +89,8 @@ class OfficeCrusher:
                 self.render()
             elif self.flag_levels:
                 self.level_select(self.flag_levels)  # Отрисовка игрового поля только при flag_game = True
+            elif self.flag_stop_menu:
+                self.stop_menu()
 
             self.clock.tick(60)  # Ограничение до 60 FPS # Ограничение до 60 FPS
 
@@ -170,6 +179,8 @@ class OfficeCrusher:
                     sys.exit()
             if hasattr(self, 'button_back_rect'):
                 print(self.button_back_rect)
+            if self.flag_game and event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                self.flag_stop_menu = True
                 if self.flag_controls_menu and self.button_back_rect.collidepoint(pygame.mouse.get_pos()) and \
                         pygame.mouse.get_pressed()[0]:
                     self.flag_controls_menu = False
@@ -187,24 +198,28 @@ class OfficeCrusher:
                         if x > 0 and type(self.board.level_data[y][x - 1]) == Furniture:
                             self.player.num_sprite = 0
                             self.board.level_data[y][x - 1].protect -= 2
+                            pygame.mixer.Sound("windshieldsmashes2.mp3").play()
                             if self.board.level_data[y][x - 1].protect <= 0:
                                 self.board.level_data[y][x - 1] = "."
                     elif self.player.napravlenie == "right":
                         if x + 1 < len(self.board.level_data[y]) and type(self.board.level_data[y][x + 1]) == Furniture:
                             self.player.num_sprite = 0
                             self.board.level_data[y][x + 1].protect -= 2
+                            pygame.mixer.Sound("windshieldsmashes2.mp3").play()
                             if self.board.level_data[y][x + 1].protect <= 0:
                                 self.board.level_data[y][x + 1] = "."
                     elif self.player.napravlenie == "up":
                         if y > 0 and type(self.board.level_data[y - 1][x]) == Furniture:
                             self.player.num_sprite = 0
                             self.board.level_data[y - 1][x].protect -= 2
+                            pygame.mixer.Sound("windshieldsmashes2.mp3").play()
                             if self.board.level_data[y - 1][x].protect <= 0:
                                 self.board.level_data[y - 1][x] = "."
                     elif self.player.napravlenie == "down":
                         if y + 1 < len(self.board.level_data) and type(self.board.level_data[y + 1][x]) == Furniture:
                             self.player.num_sprite = 0
                             self.board.level_data[y + 1][x].protect -= 2
+                            pygame.mixer.Sound("windshieldsmashes2.mp3").play()
                             if self.board.level_data[y + 1][x].protect <= 0:
                                 self.board.level_data[y + 1][x] = "."
                 elif self.player.mode == 1 and len(self.bullets_group) == 0:
@@ -218,6 +233,7 @@ class OfficeCrusher:
                         self.bullet = Bullet(x, y, self.board, "up", self.player.size)
                     elif self.player.napravlenie == "down":
                         self.bullet = Bullet(x, y, self.board, "down", self.player.size)
+                    pygame.mixer.Sound("16557_1460656892.mp3").play()
                     self.bullets_group.add(self.bullet.sprite_bullet)
                     self.bullets_group.draw(self.screen)
                     self.player.num_sprite = 1
@@ -229,7 +245,8 @@ class OfficeCrusher:
                     print('pobeg')
                     if self.flag_game is True:
                         self.flag_game = False
-                        self.flag_main_menu = True
+                        self.flag_stop_menu = True
+                        self.player.update(self.screen)
                     if self.flag_controls_menu is True:
                         self.flag_controls_menu = False
                         self.flag_main_menu = True
@@ -288,6 +305,21 @@ class OfficeCrusher:
 
         conn.commit()
         conn.close()
+
+    def stop_menu(self):
+        pygame.draw.rect(self.screen, (0, 0, 0), (width * 0.365, height * 0.185,
+                                                  width * 0.271,  height * 0.63))
+        for button in self.buttons_stop_menu:
+            clicked_button = button.update(self.mousePos, self.is_clicked)
+            if clicked_button is not None:
+                if self.flag_stop_menu:
+                    if clicked_button == 'continue' and hasattr(self, 'board'):
+                        self.flag_game = True
+                        self.flag_stop_menu = False
+                    elif clicked_button == 'exit':
+                        self.flag_stop_menu = False
+                        self.flag_main_menu = True
+        pygame.display.flip()
 
     def find_files_in_directory(self, directory, db_name):
         counter = 0
@@ -520,7 +552,7 @@ class Bullet:
             self.num_sprite = [0, 0]
         board = self.board.level_data
         if self.napr == "right":
-            self.sprite_bullet.image = pygame.transform.rotate(self.list_sprites[self.num_sprite[0]], 180)
+            self.sprite_bullet.image = pygame.transform.rotate(self.list_sprites[self.num_sprite[0]], 0)
             self.sprite_bullet.rect.x += self.size * 0.2
             if self.sprite_bullet.rect.x >= width * 0.5 + int(max([len(i) for i in board]) / 2 * self.size):
                 self.sprite_bullet.kill()
@@ -529,6 +561,7 @@ class Bullet:
                       self.y].index([i for i in board[self.y][self.x:] if type(i) == Furniture][0]) * self.size + 12):
                 board[self.y][
                     board[self.y].index([i for i in board[self.y][self.x:] if type(i) == Furniture][0])].protect -= 1
+                pygame.mixer.Sound("windshieldsmashes2.mp3").play()
                 if board[self.y][
                     board[self.y].index([i for i in board[self.y][self.x:] if type(i) == Furniture][0])].protect == 0:
                     board[self.y][
@@ -546,6 +579,7 @@ class Bullet:
                     board[self.y].index([i for i in reversed(board[self.y][:self.x]) if type(i) == Furniture][0]) * self.size):
                 board[self.y][board[self.y].index(
                     [i for i in reversed(board[self.y][:self.x]) if type(i) == Furniture][0])].protect -= 1
+                pygame.mixer.Sound("windshieldsmashes2.mp3").play()
                 if board[self.y][board[self.y].index(
                         [i for i in reversed(board[self.y][:self.x]) if type(i) == Furniture][0])].protect == 0:
                     board[self.y][board[self.y].index(
@@ -563,6 +597,7 @@ class Bullet:
                 [i for i in reversed(board[:self.y]) if type(i[self.x]) == Furniture][0]) * self.size + self.size * 0.5:
                 board[board.index([i for i in reversed(board[:self.y]) if type(i[self.x]) == Furniture][0])][
                     self.x].protect -= 1
+                pygame.mixer.Sound("windshieldsmashes2.mp3").play()
                 self.sprite_bullet.kill()
                 if board[board.index([i for i in reversed(board[:self.y]) if type(i[self.x]) == Furniture][0])][
                     self.x].protect == 0:
@@ -581,6 +616,7 @@ class Bullet:
                 [i for i in board[self.y:] if
                  type(i[self.x]) == Furniture][0]) * self.size + 12:
                 board[board.index([i for i in board[self.y:] if type(i[self.x]) == Furniture][0])][self.x].protect -= 1
+                pygame.mixer.Sound("windshieldsmashes2.mp3").play()
                 if board[board.index([i for i in board[self.y:] if type(i[self.x]) == Furniture][0])][
                     self.x].protect == 0:
                     board[board.index([i for i in board[self.y:] if type(i[self.x]) == Furniture][0])][

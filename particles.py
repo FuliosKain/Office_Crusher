@@ -5,17 +5,19 @@ from PIL import Image
 
 
 class Particles:
-    def __init__(self, screen, paths_to_images, n, size_range, vector, pos=(0, 0)):
+    def __init__(self, screen, paths_to_images, n, size_range, vector, pos=(0, 0), spread_range=1000):
         """n - количество частиц
         color - кортеж от (0, 0, 0) до (230, 230, 230), (R, G, B)
         size_range - кортеж, последовательность возможных сторон квадратов частиц
         pos - опорная позиция частиц
-        vector - скорость движения частиц изначально"""
+        vector - скорость движения частиц изначально
+        spread_range - величина разброса частиц в разные стороны"""
 
         self.all_particles = pygame.sprite.Group()
         self.screen = screen
         self.default_images = tuple(map(lambda a: pygame.image.load(a).convert_alpha(), paths_to_images))
         self.size_of_img = self.width, self.height = self.default_images[0].get_size()
+        self.spread = spread_range
 
         for i in range(n):
             temp_size = random.randint(*size_range)
@@ -30,10 +32,10 @@ class Particles:
             temp_sprite.rect = temp_sprite.image.get_rect(center=pos)
 
             k = 10
-            r1 = random.random()
-            r2 = random.random()
-            temp_sprite.vector = [(r1 - 0.5) * k + vector[0],
-                                  (r2 - 0.5) * k + vector[1]]
+            r1 = (random.randint(0, spread_range) - spread_range / 2) / 1000
+            r2 = (random.randint(0, spread_range) - spread_range / 2) / 1000
+            temp_sprite.vector = [r1 * k + vector[0],
+                                  r2 * k + vector[1]]
             temp_sprite.default_vector = temp_sprite.vector.copy()
 
             temp_sprite.vector_degree_x = temp_sprite.default_vector[0] / 30
@@ -61,12 +63,13 @@ class Particles:
 
 
 class SimpleParticles:
-    def __init__(self, screen, n, vector, color, size_range, pos=(0, 0)):
+    def __init__(self, screen, n, vector, color, size_range, pos=(0, 0), spread_range=1000):
         """n - количество частиц
         color - кортеж от (0, 0, 0) до (230, 230, 230), (R, G, B)
         size_range - кортеж, последовательность возможных сторон квадратов частиц
         pos - опорная позиция частиц
-        vector - скорость движения частиц изначально"""
+        vector - скорость движения частиц изначально
+        spread_range - величина разброса частиц в разные стороны"""
 
         self.all_particles = pygame.sprite.Group()
         self.screen = screen
@@ -82,10 +85,10 @@ class SimpleParticles:
             temp_sprite.image.fill(temp_color)
             temp_sprite.rect = temp_sprite.image.get_rect(center=pos)
             k = 10
-            r1 = random.random()
-            r2 = random.random()
-            temp_sprite.vector = [(r1 - 0.5) * k + vector[0],
-                                  (r2 - 0.5) * k + vector[1]]
+            r1 = (random.randint(0, spread_range) - spread_range / 2) / 1000
+            r2 = (random.randint(0, spread_range) - spread_range / 2) / 1000
+            temp_sprite.vector = [r1 * k + vector[0],
+                                  r2 * k + vector[1]]
             temp_sprite.default_vector = temp_sprite.vector.copy()
 
             temp_sprite.vector_degree_x = temp_sprite.default_vector[0] / 50
@@ -111,7 +114,7 @@ class SimpleParticles:
         if not self.all_particles.sprites():
             print('moment_1')
             return True
-
+'''
 
 
 def main():
@@ -131,12 +134,12 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 3:
                     click_pos = event.pos
-                    particles.append(SimpleParticles(screen, 15, (5, 0), (200, 30, 40), (2, 6),
+                    particles.append(SimpleParticles(screen, 30, (5, 0), (200, 30, 40), (2, 6),
                                      pos=click_pos))
                 elif event.button == 1:
                     click_pos = event.pos
                     particles.append(Particles(screen, ('box_particle_1.png', 'box_particle_2.png'),
-                                               15, (4, 10), (7, 0), pos=click_pos))
+                                               30, (4, 10), (7, 0), pos=click_pos))
 
         screen.fill('black')
 
@@ -158,3 +161,4 @@ def main():
 main()
 
 
+'''

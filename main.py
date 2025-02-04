@@ -43,6 +43,8 @@ class OfficeCrusher:
 
         self.all_particles = []
 
+        self.level_num = 1
+
         self.mousePos = pygame.mouse.get_pos()
         self.is_clicked = pygame.mouse.get_pressed(num_buttons=5)[0]
         self.score_sistem = Timer(self.screen, width * 0.1, height * 0.0286,
@@ -153,18 +155,23 @@ class OfficeCrusher:
                         print()
                         self.board = Board(self.player)
                         self.board.load_level(level_name)
+                        self.level_num = 2
                     elif clicked_button == 'second':
                         self.board = Board(self.player)
                         self.board.load_level(level_name)
+                        self.level_num = 2
                     elif clicked_button == 'third':
                         self.board = Board(self.player)
                         self.board.load_level(level_name)
+                        self.level_num = 3
                     elif clicked_button == 'fourth':
                         self.board = Board(self.player)
                         self.board.load_level(level_name)
+                        self.level_num = 4
                     elif clicked_button == 'fifth':
                         self.board = Board(self.player)
                         self.board.load_level(level_name)
+                        self.level_num = 5
 
         pygame.display.flip()
 
@@ -470,6 +477,14 @@ class OfficeCrusher:
             if clicked_button is not None:
                 if self.flag_end_screen:
                     if clicked_button == 'return' and hasattr(self, 'board'):
+                        self.player.mode = self.player.num_sprite = 0
+                        self.player.napravlenie = "down"
+                        self.board.generate_level()
+                        self.score_sistem = Timer(self.screen, width * 0.1, height * 0.0286,
+                                                  pygame.font.Font('BlackOpsOne-Regular_RUS_by_alince.otf', 30))
+                        self.board = Board(self.player)
+                        self.board.load_level(f"{self.level_num}.txt")
+                        self.board.generate_level()
                         self.flag_game = True
                         self.flag_end_screen = False
                     elif clicked_button == 'exit':

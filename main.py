@@ -226,11 +226,17 @@ class OfficeCrusher:
                 pygame.time.wait(1000)
                 print(score, "dcdssc")
                 with open('best_score.txt', mode='r') as file:
-                    old_best_score = int(file.read())
-                self.old_best_score = old_best_score
-                if old_best_score > score:
+                    old_best_score = [i.split(" ") for i in file.read().split("\n")]
+                    print(old_best_score)
+                print(old_best_score)
+                self.old_best_score = int(old_best_score[int(self.level_num) - 1][1])
+                print(self.old_best_score)
+                if self.old_best_score > score:
                     with open('best_score.txt', mode='w') as file:
-                        file.write(str(score))
+                        old_best_score[self.level_num - 1][1] = score
+                        print(old_best_score)
+                        old_best_score = [" ".join([str(k) for k in i]) for i in old_best_score]
+                        file.write("\n".join(old_best_score))
                     self.old_best_score = score
                 self.score = score
                 self.flag_game = False
@@ -396,8 +402,8 @@ class OfficeCrusher:
         pygame.display.flip()
 
     def weapon_update(self, new_value):
-        self.mode = new_value # mode = индекс оружия + 1
-        self.weapon_box.update_weapon(self.mode - 1)  #  смена оружия в рамке
+        self.mode = new_value  # mode = индекс оружия + 1
+        self.weapon_box.update_weapon(self.mode - 1)  # смена оружия в рамке
 
     def render(self):
         self.screen.fill("black")

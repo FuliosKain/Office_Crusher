@@ -23,10 +23,11 @@ class OfficeCrusher:
         self.clock = pygame.time.Clock()
         self.flag_end_screen = False
         self.flag_game = False
-        self.flag_main_menu = True
+        self.flag_main_menu = False
         self.flag_controls_menu = False
-        self.flag_levels = False
+        self.flag_levels = True
         self.flag_stop_menu = False
+        self.level_selected_flag = False
         self.board = Board(player)  # Инициализация класса Board
         self.player = player
         self.player.board = self.board
@@ -53,11 +54,11 @@ class OfficeCrusher:
         self.label = pygame.font.Font("Inky-Thin-Pixels_0.ttf", 45)
         self.start_button = Button(self.screen, width * 0.0135, height * 0.293, width * 0.304, height * 0.146,
                                    self.label, 'startButton', 'Начать игру', 'black')
-        self.exit_button = Button(self.screen, width * 0.0135, height * 0.625, width * 0.30, height * 0.146, self.label,
+        self.exit_button = Button(self.screen, width * 0.0135, height * 0.791, width * 0.30, height * 0.146, self.label,
                                   'exitButton', 'Выйти из игры', 'black')
         self.edit_button = Button(self.screen, width * 0.0135, height * 0.458, width * 0.30, height * 0.146,
                                   self.label, 'settings_button', 'Настройки', 'black')
-        self.level_select_button = Button(self.screen, width * 0.0135, height * 0.791, width * 0.30, height * 0.146,
+        self.level_select_button = Button(self.screen, width * 0.0135, height * 0.625, width * 0.30, height * 0.146,
                                           self.label, 'level_select', 'Уровни', 'black')
         self.buttons_menu = [self.start_button, self.exit_button, self.edit_button, self.level_select_button]
 
@@ -102,8 +103,9 @@ class OfficeCrusher:
             elif self.flag_controls_menu:
                 self.controls_menu()
             elif self.flag_game:
-                self.update()
-                self.render()
+                if self.level_selected_flag is True:
+                    self.update()
+                    self.render()
             elif self.flag_levels:
                 self.level_select(self.flag_levels)  # Отрисовка игрового поля только при flag_game = True
             elif self.flag_stop_menu:
@@ -156,22 +158,38 @@ class OfficeCrusher:
                         self.board = Board(self.player)
                         self.board.load_level(level_name)
                         self.level_num = 2
+                        self.flag_levels = False
+                        self.flag_main_menu = True
+                        self.level_selected_flag = True
                     elif clicked_button == 'second':
                         self.board = Board(self.player)
                         self.board.load_level(level_name)
                         self.level_num = 2
+                        self.flag_levels = False
+                        self.flag_main_menu = True
+                        self.level_selected_flag = True
                     elif clicked_button == 'third':
                         self.board = Board(self.player)
                         self.board.load_level(level_name)
                         self.level_num = 3
+                        self.flag_levels = False
+                        self.flag_main_menu = True
+                        self.level_selected_flag = True
                     elif clicked_button == 'fourth':
                         self.board = Board(self.player)
                         self.board.load_level(level_name)
                         self.level_num = 4
+                        self.flag_levels = False
+                        self.flag_main_menu = True
+                        self.level_selected_flag = True
                     elif clicked_button == 'fifth':
                         self.board = Board(self.player)
                         self.board.load_level(level_name)
                         self.level_num = 5
+                        self.flag_levels = False
+                        self.flag_main_menu = True
+                        self.level_selected_flag = True
+
 
         pygame.display.flip()
 
@@ -213,7 +231,10 @@ class OfficeCrusher:
                         pygame.mouse.get_pressed()[0]:
                     self.flag_controls_menu = False
                     self.flag_main_menu = True
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 2:
+                print('')
+                print('СМЕНА ОРУЖИЯ')
+                print()
                 if self.player.mode == 1:
                     self.player.weapon_update(1)
                     self.player.mode = self.player.num_sprite = 0

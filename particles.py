@@ -1,6 +1,5 @@
 import random
 import pygame
-from PIL import Image
 
 
 class Particles:

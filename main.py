@@ -602,6 +602,9 @@ class Button:
         if res:
             return self.name
 
+    def check_text(self):
+        return self.btn_text
+
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y, list_level, size=50):

@@ -190,7 +190,6 @@ class OfficeCrusher:
                         self.flag_main_menu = True
                         self.level_selected_flag = True
 
-
         pygame.display.flip()
 
     def controls_menu(self):
@@ -227,6 +226,7 @@ class OfficeCrusher:
                 print(self.button_back_rect)
             if self.flag_game and event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 self.flag_stop_menu = True
+
                 if self.flag_controls_menu and self.button_back_rect.collidepoint(pygame.mouse.get_pos()) and \
                         pygame.mouse.get_pressed()[0]:
                     self.flag_controls_menu = False
@@ -579,9 +579,6 @@ class Button:
         self.text_image_rect.center = self.width / 2, self.height / 2
 
         self.is_pressed = False
-
-    def check_text(self):
-        return self.btn_text
 
     def update(self, mouse_pos, is_clicked):
         res = False
